@@ -55,13 +55,16 @@ public class DriveSyncService extends Service {
                 if (TextUtils.isEmpty(syncAccountName)) {
                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(
                             new Intent(HomeActivity.LB_REQUEST_ACCOUNT));
+                    stopSelf();
                 } else {
                     final String accessToken = getAccessToken(syncAccountName);
                     if (!TextUtils.isEmpty(accessToken)) {
                         syncNotes(syncAccountName, accessToken);
+                        
                         // signal that syncing completed
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(
                                 new Intent(HomeActivity.LB_SYNC_COMPLETE));
+                        stopSelf();
                     }
                 }
             }
@@ -79,6 +82,7 @@ public class DriveSyncService extends Service {
             authRequiredIntent.putExtra(HomeActivity.EXTRA_AUTH_APP_INTENT, e.getIntent());
             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(
                     authRequiredIntent);
+            stopSelf();
         } catch (IOException e) {
             // FIXME do exponential backoff
         } catch (GoogleAuthException e) {
