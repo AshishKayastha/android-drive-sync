@@ -61,6 +61,7 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
     public static final String LB_REQUEST_ACCOUNT = "REQUEST_ACCOUNT";
     public static final String LB_AUTH_APP = "AUTH_APP";
     public static final String EXTRA_AUTH_APP_INTENT = "AUTH_APP_INTENT";
+    public static final String LB_SYNC_COMPLETE = "SYNC_COMPLETE";
 
     /* Activity Request Codes */
     private static final int CHOOSE_ACCOUNT = 0;
@@ -84,6 +85,8 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
                 setSyncingState(false);
                 Intent authAppIntent = intent.getParcelableExtra(EXTRA_AUTH_APP_INTENT);
                 startActivityForResult(authAppIntent, AUTH_APP);
+            } else if (LB_SYNC_COMPLETE.equals(action)) {
+                setSyncingState(false);
             }
         }
     };
@@ -116,6 +119,8 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
                 new IntentFilter(LB_REQUEST_ACCOUNT));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
                 new IntentFilter(LB_AUTH_APP));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
+                new IntentFilter(LB_SYNC_COMPLETE));
     }
 
     @Override
