@@ -70,6 +70,9 @@
         <provider
             android:name=".provider.NotesProvider"
             android:authorities="com.example.android.cloudnotes" />
+                
+        <!-- Services -->
+        <service android:name=".service.DriveSyncService" />
 
         <!-- StackView AppWidget -->
         <receiver
