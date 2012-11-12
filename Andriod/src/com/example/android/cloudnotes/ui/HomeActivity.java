@@ -28,8 +28,11 @@ import android.view.MenuItem;
 
 import com.example.android.cloudnotes.R;
 import com.example.android.cloudnotes.provider.NotesProvider;
+import com.example.android.cloudnotes.service.DriveSyncService;
 import com.example.android.cloudnotes.ui.NoteListFragment.NoteEventsCallback;
 import com.example.android.cloudnotes.utils.UiUtils;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 
 public class HomeActivity extends Activity implements NoteEventsCallback {
 
@@ -73,6 +76,8 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.home, menu);
         mSyncMenuItem = menu.findItem(R.id.ab_sync);
+        mSyncMenuItem
+                .setVisible(GooglePlayServicesUtil.isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS);
         // set correct state on config changes
         setSyncingState(mIsSyncing);
         return super.onCreateOptionsMenu(menu);
@@ -100,13 +105,6 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
                 break;
             case R.id.ab_sync:
                 startDriveSync();
-                // FIXME stop sync after 2s
-                findViewById(R.id.list).postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        setSyncingState(false);
-                    }
-                }, 2000);
                 break;
             case R.id.ab_settings:
                 // TODO add settings
@@ -119,7 +117,7 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
 
     private void startDriveSync() {
         setSyncingState(true);
-        // TODO implement this
+        startService(new Intent(this, DriveSyncService.class));
     }
 
     private void setSyncingState(boolean syncing) {
