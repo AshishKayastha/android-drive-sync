@@ -15,6 +15,12 @@ import com.example.android.cloudnotes.ui.HomeActivity;
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.google.api.client.extensions.android2.AndroidHttp;
+import com.google.api.client.http.HttpExecuteInterceptor;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.json.jackson.JacksonFactory;
+import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 
 import java.io.IOException;
@@ -59,6 +65,21 @@ public class DriveSyncService extends Service {
             Log.e(getClass().getSimpleName(), "Fatal authorization exception", e);
         }
         return null;
+    }
+
+    private Drive getDriveService(final String syncAccountName, final String accessToken) {
+        return new Drive.Builder(AndroidHttp.newCompatibleTransport(), new JacksonFactory(),
+                new HttpRequestInitializer() {
+                    @Override
+                    public void initialize(HttpRequest httpRequest) throws IOException {
+                        httpRequest.setInterceptor(new HttpExecuteInterceptor() {
+                            @Override
+                            public void intercept(HttpRequest request) throws IOException {
+                                request.getHeaders().setAuthorization("Bearer " + accessToken);
+                            }
+                        });
+                    }
+                }).build();
     }
 
     @Override
