@@ -20,11 +20,15 @@ import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -49,10 +53,13 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
 
     // key used for saving instance state
     public static final String KEY_SYNCING = "SYNCING";
-    
+
     // key identifying our shared prefs file
     public static final String KEY_PREFS = "PREFS";
-    
+
+    /* Keys for local broadcasts */
+    public static final String LB_REQUEST_ACCOUNT = "REQUEST_ACCOUNT";
+
     /* Activity Request Codes */
     private static final int CHOOSE_ACCOUNT = 0;
 
@@ -61,6 +68,18 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
     private MenuItem mSyncMenuItem;
 
     private boolean mIsSyncing = false;
+
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (LB_REQUEST_ACCOUNT.equals(action)) {
+                setSyncingState(false);
+                chooseAccount();
+            }
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -81,6 +100,19 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
         if (NoteEditFragment.ACTION_VIEW_NOTE.equals(intent.getAction())) {
             viewNote(intent);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
+                new IntentFilter(LB_REQUEST_ACCOUNT));
+    }
+
+    @Override
+    protected void onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+        super.onPause();
     }
 
     @Override
