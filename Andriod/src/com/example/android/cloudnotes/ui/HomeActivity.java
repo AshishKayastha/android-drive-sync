@@ -16,13 +16,16 @@
 
 package com.example.android.cloudnotes.ui;
 
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.ContentUris;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -31,6 +34,8 @@ import com.example.android.cloudnotes.provider.NotesProvider;
 import com.example.android.cloudnotes.service.DriveSyncService;
 import com.example.android.cloudnotes.ui.NoteListFragment.NoteEventsCallback;
 import com.example.android.cloudnotes.utils.UiUtils;
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
@@ -44,6 +49,12 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
 
     // key used for saving instance state
     public static final String KEY_SYNCING = "SYNCING";
+    
+    // key identifying our shared prefs file
+    public static final String KEY_PREFS = "PREFS";
+    
+    /* Activity Request Codes */
+    private static final int CHOOSE_ACCOUNT = 0;
 
     private static boolean mTwoPaneView;
 
@@ -127,6 +138,36 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
             mSyncMenuItem.setActionView(null);
         }
         mIsSyncing = syncing;
+    }
+
+    private void chooseAccount() {
+        startActivityForResult(AccountPicker.newChooseAccountIntent(null, null, new String[] {
+            GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE
+        }, false, null, null, null, null), CHOOSE_ACCOUNT);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case CHOOSE_ACCOUNT:
+                if (resultCode == RESULT_OK && data != null
+                        && data.hasExtra(AccountManager.KEY_ACCOUNT_NAME)) {
+                    final String syncAccount = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+                    if (!TextUtils.isEmpty(syncAccount)) {
+                        SharedPreferences.Editor prefs = getSharedPreferences(KEY_PREFS,
+                                MODE_PRIVATE).edit();
+                        prefs.putString(AccountManager.KEY_ACCOUNT_NAME, syncAccount);
+                        prefs.commit();
+
+                        // resume syncing
+                        startDriveSync();
+                    }
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     private void viewNote(Intent launchIntent) {
