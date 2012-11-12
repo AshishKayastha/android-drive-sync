@@ -9,10 +9,19 @@ import android.os.IBinder;
 import android.os.Process;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.example.android.cloudnotes.ui.HomeActivity;
+import com.google.android.gms.auth.GoogleAuthException;
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.google.api.services.drive.DriveScopes;
+
+import java.io.IOException;
 
 public class DriveSyncService extends Service {
+
+    private static final String OAUTH_SCOPE_PREFIX = "oauth2:";
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -27,12 +36,29 @@ public class DriveSyncService extends Service {
                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(
                             new Intent(HomeActivity.LB_REQUEST_ACCOUNT));
                 } else {
-                    // TODO
+                    final String accessToken = getAccessToken(syncAccountName);
                 }
             }
         };
         t.start();
         return START_STICKY;
+    }
+
+    private String getAccessToken(final String syncAccount) {
+        try {
+            return GoogleAuthUtil.getToken(getApplicationContext(), syncAccount, OAUTH_SCOPE_PREFIX
+                    + DriveScopes.DRIVE_FILE);
+        } catch (UserRecoverableAuthException e) {
+            Intent authRequiredIntent = new Intent(HomeActivity.LB_AUTH_APP);
+            authRequiredIntent.putExtra(HomeActivity.EXTRA_AUTH_APP_INTENT, e.getIntent());
+            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(
+                    authRequiredIntent);
+        } catch (IOException e) {
+            // FIXME do exponential backoff
+        } catch (GoogleAuthException e) {
+            Log.e(getClass().getSimpleName(), "Fatal authorization exception", e);
+        }
+        return null;
     }
 
     @Override

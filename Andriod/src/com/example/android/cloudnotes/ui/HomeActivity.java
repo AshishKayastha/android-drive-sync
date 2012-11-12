@@ -59,9 +59,12 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
 
     /* Keys for local broadcasts */
     public static final String LB_REQUEST_ACCOUNT = "REQUEST_ACCOUNT";
+    public static final String LB_AUTH_APP = "AUTH_APP";
+    public static final String EXTRA_AUTH_APP_INTENT = "AUTH_APP_INTENT";
 
     /* Activity Request Codes */
     private static final int CHOOSE_ACCOUNT = 0;
+    private static final int AUTH_APP = 1;
 
     private static boolean mTwoPaneView;
 
@@ -77,6 +80,10 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
             if (LB_REQUEST_ACCOUNT.equals(action)) {
                 setSyncingState(false);
                 chooseAccount();
+            } else if (LB_AUTH_APP.equals(action)) {
+                setSyncingState(false);
+                Intent authAppIntent = intent.getParcelableExtra(EXTRA_AUTH_APP_INTENT);
+                startActivityForResult(authAppIntent, AUTH_APP);
             }
         }
     };
@@ -107,6 +114,8 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
         super.onResume();
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
                 new IntentFilter(LB_REQUEST_ACCOUNT));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
+                new IntentFilter(LB_AUTH_APP));
     }
 
     @Override
@@ -195,6 +204,12 @@ public class HomeActivity extends Activity implements NoteEventsCallback {
                         // resume syncing
                         startDriveSync();
                     }
+                }
+                break;
+            case AUTH_APP:
+                if (resultCode == RESULT_OK) {
+                    // resume syncing
+                    startDriveSync();
                 }
                 break;
             default:
